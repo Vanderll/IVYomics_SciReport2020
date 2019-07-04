@@ -1,0 +1,243 @@
+
+R version 3.5.2 (2018-12-20)
+Platform: x86_64-redhat-linux-gnu (64-bit)
+Running under: CentOS release 6.10 (Final)
+
+Matrix products: default
+BLAS: /usr/lib64/R/lib/libRblas.so
+LAPACK: /usr/lib64/R/lib/libRlapack.so
+
+locale:
+ [1] LC_CTYPE=en_US.UTF-8       LC_NUMERIC=C
+ [3] LC_TIME=en_US.UTF-8        LC_COLLATE=en_US.UTF-8
+ [5] LC_MONETARY=en_US.UTF-8    LC_MESSAGES=en_US.UTF-8
+ [7] LC_PAPER=en_US.UTF-8       LC_NAME=C
+ [9] LC_ADDRESS=C               LC_TELEPHONE=C
+[11] LC_MEASUREMENT=en_US.UTF-8 LC_IDENTIFICATION=C
+
+attached base packages:
+ [1] splines   parallel  stats4    stats     graphics  grDevices utils
+ [8] datasets  methods   base
+
+other attached packages:
+ [1] sesame_1.0.0
+ [2] sesameData_1.0.0
+ [3] ExperimentHub_1.8.0
+ [4] AnnotationHub_2.14.1
+ [5] bacon_1.10.0
+ [6] ellipse_0.4.1
+ [7] ggplot2_3.1.0
+ [8] rtracklayer_1.42.1
+ [9] sva_3.30.0
+[10] genefilter_1.64.0
+[11] mgcv_1.8-26
+[12] nlme_3.1-137
+[13] doParallel_1.0.14
+[14] ChAMP_2.12.4
+[15] IlluminaHumanMethylationEPICmanifest_0.3.0
+[16] Illumina450ProbeVariants.db_1.18.0
+[17] DMRcate_1.18.0
+[18] DMRcatedata_1.18.0
+[19] DSS_2.30.0
+[20] bsseq_1.18.0
+[21] FEM_3.10.0
+[22] graph_1.60.0
+[23] org.Hs.eg.db_3.7.0
+[24] impute_1.56.0
+[25] igraph_1.2.2
+[26] corrplot_0.84
+[27] marray_1.60.0
+[28] limma_3.38.2
+[29] Matrix_1.2-15
+[30] AnnotationDbi_1.44.0
+[31] ChAMPdata_2.14.0
+[32] minfi_1.28.0
+[33] Biostrings_2.50.1
+[34] XVector_0.22.0
+[35] SummarizedExperiment_1.12.0
+[36] DelayedArray_0.8.0
+[37] BiocParallel_1.16.1
+[38] matrixStats_0.54.0
+[39] Biobase_2.42.0
+[40] bumphunter_1.24.4
+[41] locfit_1.5-9.1
+[42] iterators_1.0.10
+[43] foreach_1.4.4
+[44] GenomicRanges_1.34.0
+[45] GenomeInfoDb_1.18.1
+[46] IRanges_2.16.0
+[47] S4Vectors_0.20.1
+[48] BiocGenerics_0.28.0
+[49] plyr_1.8.4
+
+loaded via a namespace (and not attached):
+  [1] prabclus_2.2-6
+  [2] R.methodsS3_1.7.1
+  [3] wateRmelon_1.26.0
+  [4] pkgmaker_0.27
+  [5] tidyr_0.8.2
+  [6] acepack_1.4.1
+  [7] bit64_0.9-7
+  [8] knitr_1.21
+  [9] R.utils_2.7.0
+ [10] data.table_1.11.8
+ [11] rpart_4.1-13
+ [12] RCurl_1.95-4.11
+ [13] GEOquery_2.50.0
+ [14] AnnotationFilter_1.6.0
+ [15] GenomicFeatures_1.34.1
+ [16] preprocessCore_1.44.0
+ [17] RSQLite_2.1.1
+ [18] combinat_0.0-8
+ [19] bit_1.1-14
+ [20] xml2_1.2.0
+ [21] httpuv_1.4.5
+ [22] assertthat_0.2.0
+ [23] IlluminaHumanMethylation450kmanifest_0.4.0
+ [24] viridis_0.5.1
+ [25] IlluminaHumanMethylationEPICanno.ilm10b4.hg19_0.6.0
+ [26] isva_1.9
+ [27] xfun_0.5
+ [28] hms_0.4.2
+ [29] evaluate_0.13
+ [30] missMethyl_1.16.0
+ [31] DNAcopy_1.56.0
+ [32] promises_1.0.1
+ [33] DEoptimR_1.0-8
+ [34] progress_1.2.0
+ [35] dendextend_1.9.0
+ [36] DBI_1.0.0
+ [37] htmlwidgets_1.3
+ [38] reshape_0.8.8
+ [39] purrr_0.2.5
+ [40] ROC_1.58.0
+ [41] dplyr_0.7.8
+ [42] backports_1.1.2
+ [43] permute_0.9-4
+ [44] trimcluster_0.1-2.1
+ [45] annotate_1.60.0
+ [46] biomaRt_2.38.0
+ [47] ensembldb_2.6.6
+ [48] withr_2.1.2
+ [49] globaltest_5.36.0
+ [50] Gviz_1.26.5
+ [51] BSgenome_1.50.0
+ [52] robustbase_0.93-3
+ [53] checkmate_1.8.5
+ [54] GenomicAlignments_1.18.0
+ [55] prettyunits_1.0.2
+ [56] mclust_5.4.2
+ [57] cluster_2.0.7-1
+ [58] RPMM_1.25
+ [59] lazyeval_0.2.1
+ [60] crayon_1.3.4
+ [61] pkgconfig_2.0.2
+ [62] ProtGenerics_1.14.0
+ [63] nnet_7.3-12
+ [64] bindr_0.1.1
+ [65] rlang_0.3.0.1
+ [66] diptest_0.75-7
+ [67] nleqslv_3.3.2
+ [68] registry_0.5
+ [69] affyio_1.52.0
+ [70] dichromat_2.0-0
+ [71] randomForest_4.6-14
+ [72] rngtools_1.3.1
+ [73] IlluminaHumanMethylation450kanno.ilmn12.hg19_0.6.0
+ [74] base64_2.0
+ [75] Rhdf5lib_1.4.1
+ [76] base64enc_0.1-3
+ [77] geneLenDataBase_1.18.0
+ [78] whisker_0.3-2
+ [79] viridisLite_0.3.0
+ [80] bitops_1.0-6
+ [81] R.oo_1.22.0
+ [82] KernSmooth_2.23-15
+ [83] blob_1.1.1
+ [84] DelayedMatrixStats_1.4.0
+ [85] doRNG_1.7.1
+ [86] stringr_1.3.1
+ [87] qvalue_2.14.0
+ [88] nor1mix_1.2-3
+ [89] readr_1.2.1
+ [90] scales_1.0.0
+ [91] memoise_1.1.0
+ [92] magrittr_1.5
+ [93] bibtex_0.4.2
+ [94] zlibbioc_1.28.0
+ [95] compiler_3.5.2
+ [96] RColorBrewer_1.1-2
+ [97] illuminaio_0.24.0
+ [98] clue_0.3-56
+ [99] Rsamtools_1.34.0
+[100] affy_1.60.0
+[101] JADE_2.0-1
+[102] IlluminaHumanMethylationEPICanno.ilm10b2.hg19_0.6.0
+[103] htmlTable_1.13.1
+[104] Formula_1.2-3
+[105] MASS_7.3-51.1
+[106] tidyselect_0.2.5
+[107] stringi_1.2.4
+[108] yaml_2.2.0
+[109] latticeExtra_0.6-28
+[110] grid_3.5.2
+[111] VariantAnnotation_1.28.2
+[112] tools_3.5.2
+[113] ruv_0.9.7
+[114] rstudioapi_0.8
+[115] foreign_0.8-71
+[116] gridExtra_2.3
+[117] digest_0.6.18
+[118] BiocManager_1.30.4
+[119] wheatmap_0.1.0
+[120] shiny_1.2.0
+[121] quadprog_1.5-5
+[122] fpc_2.1-11.1
+[123] bindrcpp_0.2.2
+[124] Rcpp_1.0.0
+[125] siggenes_1.56.0
+[126] later_0.7.5
+[127] httr_1.3.1
+[128] biovizBase_1.30.1
+[129] lumi_2.34.0
+[130] kernlab_0.9-27
+[131] colorspace_1.3-2
+[132] XML_3.98-1.16
+[133] statmod_1.4.30
+[134] kpmt_0.1.0
+[135] multtest_2.38.0
+[136] shinythemes_1.1.2
+[137] flexmix_2.3-14
+[138] plotly_4.8.0
+[139] xtable_1.8-3
+[140] jsonlite_1.5
+[141] modeltools_0.2-22
+[142] R6_2.3.0
+[143] Hmisc_4.2-0
+[144] pillar_1.3.0
+[145] htmltools_0.3.6
+[146] mime_0.6
+[147] glue_1.3.0
+[148] interactiveDisplayBase_1.20.0
+[149] class_7.3-14
+[150] beanplot_1.2
+[151] codetools_0.2-15
+[152] mvtnorm_1.0-8
+[153] lattice_0.20-38
+[154] tibble_1.4.2
+[155] curl_3.2
+[156] BiasedUrn_1.07
+[157] gtools_3.8.1
+[158] GO.db_3.7.0
+[159] openssl_1.1
+[160] survival_2.43-3
+[161] rmarkdown_1.11
+[162] methylumi_2.28.0
+[163] fastICA_1.2-1
+[164] munsell_0.5.0
+[165] rhdf5_2.26.0
+[166] GenomeInfoDbData_1.2.0
+[167] goseq_1.34.1
+[168] HDF5Array_1.10.0
+[169] reshape2_1.4.3
+[170] gtable_0.2.0
