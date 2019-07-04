@@ -1,0 +1,563 @@
+---
+title: "SeSAMe Results"
+author: "Lauren Vanderlinden"
+date: "January 8, 2019"
+output: html_document
+---
+
+```{r, echo=FALSE, message=FALSE, error=FALSE, warning=FALSE}
+rm(list=ls())
+#table(is.na(long450.randomInterceptOnly$Intercept))
+source("Y:/LaurenV_random/Norris/programs/qqPlot_LV.R")
+library(ggplot2)
+library(lattice)
+library(bacon)
+library(ggpubr)
+library(ggplotify)
+library(nlme)
+```
+
+
+### Analysis Flow Chart ###
+
+![](C:\Users\vanderll\Documents\Norris\data\analysisFlowChart.png)
+
+### P-value Distribution: QQ Plots & Histogram ###
+
+**450K**
+
+```{r, echo=FALSE, message=FALSE, error=FALSE, warning=FALSE}
+load("Y:/LaurenV_random/Norris/data/T1Dpaper/sesameModeling_v2/long450.sesame.combatAdj.Rdata")
+load("Y:/LaurenV_random/Norris/data/T1Dpaper/sesameProcessing/filtering/sesame450.meanVarRange.Rdata")
+load("Y:/LaurenV_random/Norris/data/annotation.withClosestGene.450K.Rdata")
+source("Y:/LaurenV_random/Norris/programs/getInflationFactorLambda.R")
+
+sexProbes = anno.new[which(anno.new$chr %in% c("chrX", "chrY")), "Name"]
+SNPprobes = anno.new[!is.na(anno.new$CpG_rs), "Name"]
+finalProbeWant = meanVarRange.450sesame[-which(meanVarRange.450sesame$beta.range <0.05),]
+#315,623 probes
+finalProbeWant = finalProbeWant[-which(rownames(finalProbeWant) %in% sexProbes),]
+#308,159 probes
+finalProbeWant = finalProbeWant[-which(rownames(finalProbeWant) %in% SNPprobes),]
+#306,915
+#write.csv(rownames(finalProbeWant), file="Y:/LaurenV_random/Norris/data/T1Dpaper/sesameProcessing/filtering/finalProbesPassed.450K.csv", row.names=FALSE, col.names=FALSE, quote=FALSE)
+
+want = long450.sesame.combatAdj[which(rownames(long450.sesame.combatAdj) %in% rownames(finalProbeWant)),]
+
+set.seed(2020)
+bacon.adj.450sesame.withCombat = bacon(teststatistics=want[!is.na(want$groupT1D.control_t_stat), "groupT1D.control_t_stat"], niter=50000L,  nburnin = 10000L)
+#inflation(bacon.adj.450sesame.withCombat)
+lambda.bacon  = getLambda(pval(bacon.adj.450sesame.withCombat))
+
+toCompare = data.frame(raw.450.pval = want[!is.na(want$groupT1D.control_t_stat), "groupT1D.control_t_pvalue"], bacon.450.pval = pval(bacon.adj.450sesame.withCombat))
+rownames(toCompare) = rownames(want[!is.na(want$groupT1D.control_t_stat), ])
+
+##raw 
+lambda.raw = getLambda(as.numeric(want[!is.na(want$groupT1D.control_t_pvalue), "groupT1D.control_t_pvalue"]))
+raw.hist = qplot(want[!is.na(want$groupT1D.control_t_pvalue), "groupT1D.control_t_pvalue"], geom="histogram", bins=50) + ggtitle("450K Group p-values\nSeSAMe, ComBat Adjusted, Filtered") + labs(x="p-value", y="Frequency")
+raw.qq = as.ggplot(qqunif.plot(as.numeric(want[!is.na(want$groupT1D.control_t_pvalue), "groupT1D.control_t_pvalue"]), draw.conf=FALSE, main="450K Group p-values (lambda = 0.93)\nSeSAMe, ComBat Adjusted, Filtered"))
+
+raw.hist
+raw.qq
+
+#bacon
+bacon.hist = qplot(pval(bacon.adj.450sesame.withCombat), geom="histogram", bins=50) + ggtitle("450K Group p-values\nSeSAMe, ComBat Adjusted, Filtered & BACON") + labs(x="p-value", y="Frequency")
+bacon.qq = as.ggplot(qqunif.plot(as.numeric(pval(bacon.adj.450sesame.withCombat)), draw.conf=FALSE, main="450K Group p-values  (lambda = 1.08)\nSeSAMe, ComBat Adjusted, Filtered & BACON"))
+
+bacon.hist
+bacon.qq
+
+sesame450.forMeta = data.frame(tStat.450=want[!is.na(want$groupT1D.control_t_stat), "groupT1D.control_t_stat"], pval.450 = pval(bacon.adj.450sesame.withCombat), M.control.450 = (want[!is.na(want$groupT1D.control_t_stat), "Intercept"] + want[!is.na(want$groupT1D.control_t_stat), "groupT1D.control"]), M.case.450 =  want[!is.na(want$groupT1D.control_t_stat), "Intercept"], M.diff.450 = -want[!is.na(want$groupT1D.control_t_stat), "groupT1D.control"])
+rownames(sesame450.forMeta) = rownames(want[!is.na(want$groupT1D.control_t_stat), ])
+
+sesame450.raw.forMeta =  data.frame(tStat.450=want[!is.na(want$groupT1D.control_t_stat), "groupT1D.control_t_stat"], pval.450 = want[!is.na(want$groupT1D.control_t_pvalue), "groupT1D.control_t_pvalue"], M.control.450 = (want[!is.na(want$groupT1D.control_t_stat), "Intercept"] + want[!is.na(want$groupT1D.control_t_stat), "groupT1D.control"]), M.case.450 =  want[!is.na(want$groupT1D.control_t_stat), "Intercept"], M.diff.450 = -want[!is.na(want$groupT1D.control_t_stat), "groupT1D.control"])
+rownames(sesame450.raw.forMeta) = rownames(want[!is.na(want$groupT1D.control_t_stat), ])
+
+save(bacon.adj.450sesame.withCombat, sesame450.forMeta, sesame450.raw.forMeta, file="Y:/LaurenV_random/Norris/data/T1Dpaper/sesameModeling_v2/sesame450.filtered.bacon.forMeta.Rdata")
+```
+
+**EPIC**
+
+```{r, echo=FALSE, message=FALSE, error=FALSE, warning=FALSE}
+rm(list=ls())
+source("Y:/LaurenV_random/Norris/programs/qqPlot_LV.R")
+source("Y:/LaurenV_random/Norris/programs/getInflationFactorLambda.R")
+load("Y:/LaurenV_random/Norris/data/T1Dpaper/sesameModeling_v2/longEPIC.sesame.combatAdj.Rdata")
+load("Y:/LaurenV_random/Norris/data/T1Dpaper/sesameProcessing/filtering/sesameEPIC.meanVarRange.Rdata")
+load("Y:/LaurenV_random/Norris/data/annotation.850k.Rdata")
+
+sexProbes = anno[which(anno$chr %in% c("chrX", "chrY")), "Name"]
+SNPprobes = anno[!is.na(anno$CpG_rs), "Name"]
+finalProbeWant = meanVarRange.850sesame[-which(meanVarRange.850sesame$beta.range <0.05),]
+#439,273 probes
+finalProbeWant = finalProbeWant[-which(rownames(finalProbeWant) %in% sexProbes),]
+#428,062 probes
+finalProbeWant = finalProbeWant[-which(rownames(finalProbeWant) %in% SNPprobes),]
+#425,751
+
+#write.csv(rownames(finalProbeWant), file="Y:/LaurenV_random/Norris/data/T1Dpaper/sesameProcessing/filtering/finalProbesPassed.EPIC.csv", row.names=FALSE, col.names=FALSE, quote=FALSE)
+want = longEPIC.sesame.combatAdj[which(rownames(longEPIC.sesame.combatAdj) %in% rownames(finalProbeWant)),]
+
+set.seed(2020)
+bacon.adj.EPICsesame.withCombat = bacon(teststatistics=want[!is.na(want$groupT1D.control_t_stat), "groupT1D.control_t_stat"], niter=50000L,  nburnin = 10000L)
+#inflation(bacon.adj.EPICsesame.withCombat)
+lambda.bacon  = getLambda(pval(bacon.adj.EPICsesame.withCombat))
+
+toCompare.EPIC = data.frame(raw.EPIC.pval = want[!is.na(want$groupT1D.control_t_stat), "groupT1D.control_t_pvalue"], bacon.EPIC.pval = pval(bacon.adj.EPICsesame.withCombat))
+rownames(toCompare.EPIC) = rownames(want[!is.na(want$groupT1D.control_t_stat), ])
+
+toCompare.all = merge(toCompare, toCompare.EPIC, by=0)
+##raw 
+lambda.raw = getLambda(as.numeric(want[!is.na(want$groupT1D.control_t_pvalue), "groupT1D.control_t_pvalue"]))
+raw.hist = qplot(want[!is.na(want$groupT1D.control_t_pvalue), "groupT1D.control_t_pvalue"], geom="histogram", bins=50) + ggtitle("EPIC Group p-values\nSeSAMe, ComBat Adjusted, Filtered") + labs(x="p-value", y="Frequency")
+raw.qq = as.ggplot(qqunif.plot(as.numeric(want[!is.na(want$groupT1D.control_t_pvalue), "groupT1D.control_t_pvalue"]), draw.conf=FALSE, main="EPIC Group p-values (lambda = 0.98)\nSeSAMe, ComBat Adjusted, Filtered"))
+
+raw.hist
+raw.qq
+
+#bacon
+bacon.hist = qplot(pval(bacon.adj.EPICsesame.withCombat), geom="histogram", bins=50) + ggtitle("EPIC Group p-values\nSeSAMe, ComBat Adjusted, Filtered & BACON") + labs(x="p-value", y="Frequency")
+bacon.qq = as.ggplot(qqunif.plot(as.numeric(pval(bacon.adj.EPICsesame.withCombat)), draw.conf=FALSE, main="EPIC Group p-values  (lambda = 1.03)\nSeSAMe, ComBat Adjusted, Filtered & BACON"))
+
+bacon.hist
+bacon.qq
+
+
+sesameEPIC.forMeta = data.frame(tStat.EPIC=want[!is.na(want$groupT1D.control_t_stat), "groupT1D.control_t_stat"], pval.EPIC = pval(bacon.adj.EPICsesame.withCombat), M.control.EPIC = (want[!is.na(want$groupT1D.control_t_stat), "Intercept"] + want[!is.na(want$groupT1D.control_t_stat), "groupT1D.control"]), M.case.EPIC =  want[!is.na(want$groupT1D.control_t_stat), "Intercept"], M.diff.EPIC = -want[!is.na(want$groupT1D.control_t_stat), "groupT1D.control"])
+
+rownames(sesameEPIC.forMeta) = rownames(want[!is.na(want$groupT1D.control_t_stat), ])
+
+
+sesameEPIC.raw.forMeta =  data.frame(tStat.EPIC=want[!is.na(want$groupT1D.control_t_stat), "groupT1D.control_t_stat"], pval.EPIC = want[!is.na(want$groupT1D.control_t_pvalue), "groupT1D.control_t_pvalue"], M.control.EPIC = (want[!is.na(want$groupT1D.control_t_stat), "Intercept"] + want[!is.na(want$groupT1D.control_t_stat), "groupT1D.control"]), M.case.EPIC =  want[!is.na(want$groupT1D.control_t_stat), "Intercept"], M.diff.EPIC = -want[!is.na(want$groupT1D.control_t_stat), "groupT1D.control"])
+rownames(sesameEPIC.raw.forMeta) = rownames(want[!is.na(want$groupT1D.control_t_stat), ])
+
+save(bacon.adj.EPICsesame.withCombat, sesameEPIC.forMeta, sesameEPIC.raw.forMeta, file="Y:/LaurenV_random/Norris/data/T1Dpaper/sesameModeling_v2/sesameEPIC.filtered.bacon.forMeta.Rdata")
+```
+
+
+### Meta Candidates ###
+
+```{r, echo=FALSE, message=FALSE, error=FALSE, warning=FALSE, eval=FALSE}
+rm(list=ls())
+load("Y:/LaurenV_random/Norris/data/T1Dpaper/sesameModeling_v2/sesameEPIC.filtered.bacon.forMeta.Rdata")
+load("Y:/LaurenV_random/Norris/data/T1Dpaper/sesameModeling_v2/sesame450.filtered.bacon.forMeta.Rdata")
+source("Y:/LaurenV_random/Norris/programs/metaFunctions.fromKaterina.R")
+
+load("Y:/LaurenV_random/Norris/data/annotation.withClosestGene.450K.Rdata")
+
+
+forMeta = as.data.frame(merge(sesame450.forMeta, sesameEPIC.forMeta, by=0))
+
+#get meta p-value
+forMeta$pval.meta = apply(forMeta, 1, function(a) Ncomb.2p.2sided(as.numeric(a[3]), as.numeric(a[8]), as.numeric(a[2]), as.numeric(a[7])))
+forMeta$FDR.meta = p.adjust(forMeta$pval.meta, method="BH")
+
+#get meta combined effect size;
+
+getMetaEffect = function(a){
+    dat = data.frame(t(a[c(4,5,9,10)]))
+    colnames(dat) = "M"
+    dat$platform = sapply(strsplit(rownames(dat),split=".", fixed=TRUE), "[[", 3)
+    dat$group = sapply(strsplit(rownames(dat), split=".", fixed=TRUE), "[[", 2)
+    
+    want = lm(as.numeric(dat$M) ~ as.factor(dat$group) + as.factor(dat$platform))$coefficients
+    #here the M differene 
+    want2 = c(want[1] + want[2], want[1], -want[2])
+    names(want2) = c("M.control.meta", "M.case.meta", "M.diff.meta")
+    return(want2)
+}
+
+for(i in 1:nrow(forMeta)){
+#for(i in 1:5){
+  x = t(as.matrix(getMetaEffect(forMeta[i,])))
+  rownames(x) = forMeta[i, 1]
+  if(i!=1) metaEffects = rbind(metaEffects, x)
+  if(i==1) metaEffects = x
+  }
+
+
+MetaResults = merge(forMeta, metaEffects, by.x="Row.names", by.y=0)
+
+#MetaResults$M.diff.average = apply(MetaResults[,c("M.diff.450", "M.diff.EPIC")], 1, mean)
+#MetaResults$M.control.average = apply(MetaResults[,c("M.control.450", "M.control.EPIC")], 1, mean)
+#MetaResults$M.case.average = apply(MetaResults[,c("M.case.450", "M.case.EPIC")], 1, mean)
+
+want = MetaResults[which(MetaResults$FDR.meta<0.1), ]
+want.withAnno = merge(anno.new, want, by.x= 0, by.y="Row.names")
+
+MetaResults.withAnno  = merge(anno.new, MetaResults, anno.new, by.y="Row.names", by.x=0)
+
+save(MetaResults, file="Y:/LaurenV_random/Norris/data/T1Dpaper/sesameModeling_v2/longMetaResults.Rdata")
+save(MetaResults.withAnno, file="Y:/LaurenV_random/Norris/data/T1Dpaper/sesameModeling_v2/longMetaResults.withAnno.Rdata")
+write.csv(want.withAnno, file="Y:/LaurenV_random/Norris/data/T1Dpaper/sesameModeling_v2/longCandidates.wGeneInfo.csv")
+
+
+#get in form for DMR analysis
+forDMR = MetaResults.withAnno[,c("chr", "pos", "pos", "Row.names", "pval.meta")]
+forDMR$pos.1 = forDMR$pos.1+1
+forDMR = forDMR[order(forDMR$chr, forDMR$pos),]
+
+write.table(forDMR, file="Y:/LaurenV_random/Norris/data/T1Dpaper/sesameModeling_v2/longitudinalMeta.forDMR.bed", col.names=FALSE, row.names=FALSE)
+```
+
+```{r}
+rm(list=ls())
+load(file="Y:/LaurenV_random/Norris/data/T1Dpaper/sesameModeling_v2/longMetaResults.withAnno.Rdata")
+
+
+MetaResults.withAnno[which.max(abs(MetaResults.withAnno$Beta.diff.meta)),]
+```
+
+### Range Filter: Density Plots for Reviewers ####
+
+
+```{r}
+rm(list=ls())
+load("Y:/LaurenV_random/Norris/data/T1Dpaper/sesameProcessing/filtering/sesameEPIC.meanVarRange.Rdata")
+epic.ranges = data.frame(meanVarRange.850sesame, "EPIC")
+colnames(epic.ranges)[4] = "platform"
+load("Y:/LaurenV_random/Norris/data/T1Dpaper/sesameProcessing/filtering/sesame450.meanVarRange.Rdata")
+ranges.450 = data.frame(meanVarRange.450sesame, "450K")
+colnames(ranges.450)[4] = "platform"
+
+toPlot = rbind(epic.ranges, ranges.450)
+toPlot2 = rbind( epic.ranges[which(rownames(epic.ranges) %in% rownames(ranges.450)),], ranges.450)
+
+ggplot(toPlot2,aes(x=as.numeric(beta.range), fill=platform)) + geom_density(alpha=0.2, stat = "density")+
+  xlab("Beta Range") +
+  ggtitle("Range Filtering") + 
+#  xlim(-1, 1) + 
+  scale_fill_manual(values=c("blue", "green")) + 
+  geom_vline(xintercept=0.05,  linetype = "dashed", colour = "red")
+
+###density plot of the p-values;
+load("Y:/LaurenV_random/Norris/data/T1Dpaper/sesameModeling_v2/long450.sesame.combatAdj.Rdata")
+want = rownames(meanVarRange.450sesame[which(meanVarRange.450sesame$beta.range>0.05), ])
+
+origP = data.frame(long450.sesame.combatAdj$groupT1D.control_t_pvalue, "Full")
+newP = data.frame(long450.sesame.combatAdj[which(rownames(long450.sesame.combatAdj) %in% want), "groupT1D.control_t_pvalue"], "Filtered")
+colnames(origP) = c("p.value", "dataset")
+colnames(newP) = c("p.value", "dataset")
+
+toPlot = rbind(origP, newP)
+
+ggplot(toPlot,aes(x=p.value)) + 
+    geom_histogram(data=subset(toPlot,dataset == 'Full'), aes(fill = "Full"), alpha = 0.2, bins=50) +
+    geom_histogram(data=subset(toPlot,dataset == 'Filtered'),aes(fill = "Filtered"), alpha = 0.2, bins=50) +
+    ggtitle("450K p-values: Pre and Post Filtering") + 
+    scale_fill_manual(name="Type",values=c('Full'="blue", 'Filtered'="green"))+
+    theme(legend.position="bottom")
+
+
+load("Y:/LaurenV_random/Norris/data/T1Dpaper/sesameModeling_v2/longEPIC.sesame.combatAdj.Rdata")
+want = rownames(meanVarRange.850sesame[which(meanVarRange.850sesame$beta.range>0.05), ])
+origP = data.frame(longEPIC.sesame.combatAdj$groupT1D.control_t_pvalue, "Full")
+newP = data.frame(longEPIC.sesame.combatAdj[which(rownames(longEPIC.sesame.combatAdj) %in% want), "groupT1D.control_t_pvalue"], "Filtered")
+colnames(origP) = c("p.value", "dataset")
+colnames(newP) = c("p.value", "dataset")
+
+toPlot = rbind(origP, newP)
+
+ggplot(toPlot,aes(x=p.value)) + 
+    geom_histogram(data=subset(toPlot,dataset == 'Full'), aes(fill = "Full"), alpha = 0.2, bins=50) +
+    geom_histogram(data=subset(toPlot,dataset == 'Filtered'),aes(fill = "Filtered"), alpha = 0.2, bins=50) +
+    ggtitle("EPIC p-values: Pre and Post Filtering") + 
+    scale_fill_manual(name="Type",values=c('Full'="blue", 'Filtered'="green"))+
+    theme(legend.position="bottom")
+
+
+
+###get logue figure 4;
+rm.epic = epic.ranges[which(epic.ranges$beta.range<0.05),]
+qplot(rm.epic$beta.mean, geom="histogram",main = "EPIC: Mean Beta for Probes < 0.05 Beta Range", xlab = "Mean Beta", bins=40) + xlim(0, 1)
+ 
+rm.450 = ranges.450[which(ranges.450$beta.range<0.05),]
+qplot(rm.450$beta.mean, geom="histogram",main = "450K: Mean Beta for Probes < 0.05 Beta Range", xlab = "Mean Beta", bins=40) + xlim(0, 1)
+
+keep.epic = epic.ranges[-which(epic.ranges$beta.range<0.05),]
+qplot(keep.epic$beta.mean, geom="histogram",main = "EPIC: Mean Beta for Probes > 0.05 Beta Range", xlab = "Mean Beta", bins=40) + xlim(0, 1)
+
+keep.450 = ranges.450[-which(ranges.450$beta.range<0.05),]
+qplot(keep.450$beta.mean, geom="histogram",main = "450K: Mean Beta for Probes > 0.05 Beta Range", xlab = "Mean Beta", bins=40) + xlim(0, 1)
+
+
+#### proportion of chromosomes pre and post filtering;
+load(file="Y:/LaurenV_random/Norris/data/annotation.450k.Rdata")
+
+anno.sesame.propChr = data.frame(table(anno[which(anno$Name %in% rownames(ranges.450)), "chr"])/nrow(ranges.450)*100, "Pre")
+colnames(anno.sesame.propChr) = c("Chr", "proportion", "dataset")
+
+anno.filter.propChr = data.frame(table(anno[which(anno$Name %in% rownames(keep.450)), "chr"])/nrow(keep.450)*100, "Post")
+colnames(anno.filter.propChr) = c("Chr", "proportion", "dataset")
+
+colors.want = brewer.pal(n=9, "Set1")
+anno.toPlot = rbind(anno.sesame.propChr, anno.filter.propChr)    
+anno.toPlot$Chr = factor(anno.toPlot$Chr,levels(anno.toPlot$Chr)[c(1,12,16:22, 2:11, 13:15, 23, 24)])
+
+ggplot(data=anno.toPlot, aes(x=Chr, y=proportion, fill=dataset)) +
+  geom_bar(stat="identity", color="black", position=position_dodge())+
+#  theme_minimal()
+# Use custom colors
+  scale_fill_manual(values=colors.want[1:2])+
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))+
+  ggtitle("450K: Proportion Chromosomes Represented Pre & Post Range Filtering")+
+  xlab("Chromosome")
+  
+##EPIC
+load(file="Y:/LaurenV_random/Norris/data/annotation.850K.Rdata")
+
+anno.sesame.propChr = data.frame(table(anno[which(anno$Name %in% rownames(epic.ranges)), "chr"])/nrow(epic.ranges)*100, "Pre")
+colnames(anno.sesame.propChr) = c("Chr", "proportion", "dataset")
+
+anno.filter.propChr = data.frame(table(anno[which(anno$Name %in% rownames(keep.epic)), "chr"])/nrow(keep.epic)*100, "Post")
+colnames(anno.filter.propChr) = c("Chr", "proportion", "dataset")
+
+colors.want = brewer.pal(n=9, "Set1")
+anno.toPlot = rbind(anno.sesame.propChr, anno.filter.propChr)    
+anno.toPlot$Chr = factor(anno.toPlot$Chr,levels(anno.toPlot$Chr)[c(1,12,16:22, 2:11, 13:15, 23, 24)])
+
+ggplot(data=anno.toPlot, aes(x=Chr, y=proportion, fill=dataset)) +
+  geom_bar(stat="identity", color="black", position=position_dodge())+
+#  theme_minimal()
+# Use custom colors
+  scale_fill_manual(values=colors.want[1:2])+
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))+
+  ggtitle("EPIC: Proportion Chromosomes Represented Pre & Post Range Filtering")+
+  xlab("Chromosome")
+
+###Get to a table format
+load(file="Y:/LaurenV_random/Norris/data/annotation.450k.Rdata")
+
+anno.sesame.propChr = data.frame(table(anno[which(anno$Name %in% rownames(ranges.450)), "chr"])/nrow(ranges.450)*100)
+colnames(anno.sesame.propChr) = c("Chr", "450 Pre")
+
+anno.filter.propChr = data.frame(table(anno[which(anno$Name %in% rownames(keep.450)), "chr"])/nrow(keep.450)*100)
+colnames(anno.filter.propChr) = c("Chr", "450 Post")
+
+propChr.450 = merge(anno.sesame.propChr, anno.filter.propChr, by="Chr")
+
+load(file="Y:/LaurenV_random/Norris/data/annotation.850K.Rdata")
+
+anno.sesame.propChr = data.frame(table(anno[which(anno$Name %in% rownames(epic.ranges)), "chr"])/nrow(epic.ranges)*100)
+colnames(anno.sesame.propChr) = c("Chr", "EPIC Pre")
+
+anno.filter.propChr = data.frame(table(anno[which(anno$Name %in% rownames(keep.epic)), "chr"])/nrow(keep.epic)*100)
+colnames(anno.filter.propChr) = c("Chr", "EPIC Post")
+
+propChr.epic = merge(anno.sesame.propChr, anno.filter.propChr, by="Chr")
+
+propChr.all = merge(propChr.450, propChr.epic, by="Chr")
+propChr.all$Chr = factor(propChr.all$Chr,levels(propChr.all$Chr)[c(1,12,16:22, 2:11, 13:15, 23, 24)])
+
+propChr.all = propChr.all[order(propChr.all$Chr),]
+write.csv(propChr.all, file="Y:/LaurenV_random/Norris/data/T1Dpaper/sesameProcessing/filtering/proportionChr.prePostRangeFiltering.csv")
+
+
+###Get to a table format actual counts
+load(file="Y:/LaurenV_random/Norris/data/annotation.450k.Rdata")
+
+anno.sesame.numChr = data.frame(table(anno[which(anno$Name %in% rownames(ranges.450)), "chr"]))
+colnames(anno.sesame.numChr) = c("Chr", "450 Pre")
+
+anno.filter.numChr = data.frame(table(anno[which(anno$Name %in% rownames(keep.450)), "chr"]))
+colnames(anno.filter.numChr) = c("Chr", "450 Post")
+
+numChr.450 = merge(anno.sesame.numChr, anno.filter.numChr, by="Chr")
+
+load(file="Y:/LaurenV_random/Norris/data/annotation.850K.Rdata")
+
+anno.sesame.numChr = data.frame(table(anno[which(anno$Name %in% rownames(epic.ranges)), "chr"]))
+colnames(anno.sesame.numChr) = c("Chr", "EPIC Pre")
+
+anno.filter.numChr = data.frame(table(anno[which(anno$Name %in% rownames(keep.epic)), "chr"]))
+colnames(anno.filter.numChr) = c("Chr", "EPIC Post")
+
+numChr.epic = merge(anno.sesame.numChr, anno.filter.numChr, by="Chr")
+
+numChr.all = merge(numChr.450, numChr.epic, by="Chr")
+numChr.all$Chr = factor(numChr.all$Chr,levels(numChr.all$Chr)[c(1,12,16:22, 2:11, 13:15, 23, 24)])
+
+numChr.all = numChr.all[order(numChr.all$Chr),]
+write.csv(numChr.all, file="Y:/LaurenV_random/Norris/data/T1Dpaper/sesameProcessing/filtering/numberChr.prePostRangeFiltering.csv")
+
+toTest = numChr.all[-c(23:24),]
+
+chisq.test(toTest[,4:5])
+
+toTest = propChr.all[-c(23:24),]
+```
+
+
+```{r}
+
+##### PCA To See ComBat Adjustment ###
+rm(list=ls())
+
+load("Y:/LaurenV_random/Norris/data/T1Dpaper/sesameModeling_v2/PCA_toTestBatch/450K_PCA_pOOBAHfiltered.Rdata")
+Pre_450 = pca.results$points
+colnames(Pre_450) = paste("PC", 1:10, sep="")
+Pre_450_prop = round(eig_pc_proportion[1:10], 2)
+
+load("Y:/LaurenV_random/Norris/data/T1Dpaper/sesameModeling_v2/PCA_toTestBatch/EPIC_PCA_pOOBAHfiltered.Rdata")
+Pre_EPIC = pca.results$points
+colnames(Pre_EPIC) = paste("PC", 1:10, sep="")
+Pre_EPIC_prop = round(eig_pc_proportion[1:10], 2)
+
+#### Load in the phenotype file
+
+load("Y:/LaurenV_random/Norris/data/T1Dpaper/sesameModeling_v2/PCA_toTestBatch/EPICpheno.long.Rdata")
+
+EPIC_toAnalyze = merge(Pre_EPIC, pheno.forAnalysis, by.x=0, by.y="rgName")
+
+plate.preEPIC = c()
+for(i in 2:11){
+  plate.preEPIC = c(plate.preEPIC, anova(lm(EPIC_toAnalyze[,i]~as.factor(EPIC_toAnalyze$Sample_Plate)))[1,5])
+}
+PreEPIC_plate = data.frame(PC = paste("PC", 1:10, sep=""), p.val = plate.preEPIC, dataset = "EPIC")
+
+
+#### Load in the 450 phenotype file
+
+load("Y:/LaurenV_random/Norris/data/T1Dpaper/sesameModeling_v2/PCA_toTestBatch/pheno450.long.Rdata")
+
+toAnalyze = merge(Pre_450, pheno.forAnalysis, by.x=0, by.y="Array")
+
+plate.pre450 = c()
+for(i in 2:11){
+  plate.pre450 = c(plate.pre450, anova(lm(toAnalyze[,i]~as.factor(toAnalyze$Sample_Plate)))[1,5])
+}
+Pre450_plate = data.frame(PC = paste("PC", 1:10, sep=""), p.val = plate.pre450, dataset = "450K")
+
+####Plot it;
+toPlot=  rbind(PreEPIC_plate, Pre450_plate)
+toPlot$PC = factor(toPlot$PC,levels(toPlot$PC)[c(1,3:10, 2)])
+
+# Create a ggheatmap
+toPlot$minus.log10pval = -log10(toPlot$p.val)
+toPlot$minus.log10pval[which(toPlot$p.val>0.05)]=1.3
+toPlot$pvalsToPrint = formatC(toPlot$p.val, format = "e", digits = 2)
+  
+ggheatmap <- ggplot(toPlot, aes(PC, dataset, fill = minus.log10pval))+
+ geom_tile(color = "white")+
+   ggtitle("Assocation with Plate (Batch)") +
+ scale_fill_gradient2(low = "white", high = "red", mid="white", na.value = "red",
+   midpoint = 0.05, limit = c(0,10), space = "Lab", 
+    name="-log10(p-value)") +
+  theme_minimal()+ # minimal theme
+ theme(axis.text.x = element_text(angle = 45, vjust = 1, 
+    size = 12, hjust = 1))+
+  xlab("") +
+ # scale_x_discrete(labels=c("group4", paste("PC", c(1:10), " (", round(eig_pc_proportion[1:10], 2), "%)", sep=""))) +
+#  ylab("Cell Type") +
+ coord_fixed()
+# Print the heatmap
+ggheatmap + geom_text(label = toPlot$pvalsToPrint, size=2)
+
+#### load in the rest later
+load("Y:/LaurenV_random/Norris/data/T1Dpaper/sesameModeling_v2/PCA_toTestBatch/long450.PCA.Rdata")
+Post_450 = pca.results$points
+colnames(Post_450) = paste("PC", 1:10)
+load("Y:/LaurenV_random/Norris/data/T1Dpaper/sesameModeling_v2/PCA_toTestBatch/pheno450.long.Rdata")
+
+toAnalyze = merge(Post_450, pheno.forAnalysis, by.x=0, by.y="Array")
+
+plate.post450 = c()
+for(i in 2:11){
+  plate.post450 = c(plate.post450, anova(lm(toAnalyze[,i]~as.factor(toAnalyze$Sample_Plate)))[1,5])
+}
+Post450_plate = data.frame(PC = paste("PC", 1:10, sep=""), p.val = plate.post450, dataset = "450K ComBat")
+
+###EPIC Post
+load("Y:/LaurenV_random/Norris/data/T1Dpaper/sesameModeling_v2/PCA_toTestBatch/long850.PCA.Rdata")
+Post_EPIC = pca.results$points
+colnames(Post_EPIC) = paste("PC", 1:10)
+
+load("Y:/LaurenV_random/Norris/data/T1Dpaper/sesameModeling_v2/PCA_toTestBatch/EPICpheno.long.Rdata")
+
+EPIC_toAnalyze = merge(Post_EPIC, pheno.forAnalysis, by.x=0, by.y="rgName")
+
+plate.postEPIC = c()
+for(i in 2:11){
+  plate.postEPIC = c(plate.postEPIC, anova(lm(EPIC_toAnalyze[,i]~as.factor(EPIC_toAnalyze$Sample_Plate)))[1,5])
+}
+PostEPIC_plate = data.frame(PC = paste("PC", 1:10, sep=""), p.val = plate.postEPIC, dataset = "EPIC ComBat")
+
+####Plot it;
+toPlot=  rbind(PostEPIC_plate, Post450_plate, PreEPIC_plate, Pre450_plate)
+toPlot$PC = factor(toPlot$PC,levels(toPlot$PC)[c(1,3:10, 2)])
+
+# Create a ggheatmap
+toPlot$minus.log10pval = -log10(toPlot$p.val)
+toPlot$minus.log10pval[which(toPlot$p.val>0.05)]=1.3
+toPlot$pvalsToPrint = formatC(toPlot$p.val, format = "e", digits = 2)
+  
+ggheatmap <- ggplot(toPlot, aes(PC, dataset, fill = minus.log10pval))+
+ geom_tile(color = "white")+
+   ggtitle("Assocation with Plate (Batch)") +
+ scale_fill_gradient2(low = "white", high = "red", mid="white", na.value = "red",
+   midpoint = 0.05, limit = c(0,10), space = "Lab", 
+    name="-log10(p-value)") +
+  theme_minimal()+ # minimal theme
+ theme(axis.text.x = element_text(angle = 45, vjust = 1, 
+    size = 12, hjust = 1))+
+  xlab("") +
+ # scale_x_discrete(labels=c("group4", paste("PC", c(1:10), " (", round(eig_pc_proportion[1:10], 2), "%)", sep=""))) +
+#  ylab("Cell Type") +
+ coord_fixed()
+# Print the heatmap
+ggheatmap + geom_text(label = toPlot$pvalsToPrint, size=2.5)
+
+
+
+#### Get TR Correlation vs Range Scatter plot;
+rm(list=ls())
+#load("Y:/LaurenV_random/Norris/data/T1Dpaper/sesameProcessing/sesame_techRepCompare/techRepData.within450.Rdata")
+load("Y:/LaurenV_random/Norris/data/T1Dpaper/sesameProcessing/filtering/sesame450.meanVarRange.Rdata")
+load("Y:/LaurenV_random/Norris/data/T1Dpaper/sesameProcessing/probeLevel.corrs.within450.Rdata")
+
+toPlot = merge(corr.results.probeLevel, meanVarRange.450sesame, by=0)
+
+### Make Plot of variables mpg by wt
+
+ggplot(toPlot, aes(x=beta.range, y=corrs.coeff)) + 
+  geom_point() + 
+  ggtitle("450K: Beta Range vs Technical Replicate Correlation") + 
+  xlab("Beta Range") + 
+  ylab("Probe Correlation Coefficient")+
+  geom_vline(xintercept=0.05,  linetype = "dashed", colour = "red")
+
+
+
+
+```
+
+
+###Get Sex Info for 16 Candidates ###
+
+```{r}
+rm(list=ls())
+load("Y:/LaurenV_random/Norris/data/T1Dpaper/sesameModeling_v2/long450.sesame.combatAdj.Rdata")
+load("Y:/LaurenV_random/Norris/data/T1Dpaper/sesameModeling_v2/longEPIC.sesame.combatAdj.Rdata")
+
+load("Y:/LaurenV_random/Norris/data/T1Dpaper/sesameModeling_v2/longMetaResults.withAnno.Rdata")
+want = MetaResults.withAnno[which(MetaResults.withAnno$FDR.meta<0.1),]
+     
+cand450 = long450.sesame.combatAdj[which(rownames(long450.sesame.combatAdj) %in% want$Row.names), ]
+table(rownames(cand450)==want$Row.names)
+
+sex.pval.450 = as.matrix(cand450$genderMale_t_pvalue)
+rownames(sex.pval.450) = rownames(cand450)
+colnames(sex.pval.450) = "sex.pval.450"
+
+want2 = merge(want, sex.pval.450, by.x="Row.names", by.y=0)
+
+candEPIC = longEPIC.sesame.combatAdj[which(rownames(longEPIC.sesame.combatAdj) %in% want$Row.names),]
+sex.pval.EPIC = as.matrix(candEPIC$genderMale_t_pvalue) 
+rownames(sex.pval.EPIC) = rownames(candEPIC)
+colnames(sex.pval.EPIC) = "sex.pval.EPIC"
+
+want3 = merge(want2, sex.pval.EPIC, by.x="Row.names", by.y=0)
+write.csv(want3, file="Y:/LaurenV_random/Norris/data/T1Dpaper/sesameModeling_v2/16cands.wSexInfo.csv")
+```
+
+

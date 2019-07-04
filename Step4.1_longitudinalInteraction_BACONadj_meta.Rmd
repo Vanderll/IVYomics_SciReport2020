@@ -1,0 +1,464 @@
+---
+title: "SeSAMe Interaction Model"
+author: "Lauren Vanderlinden"
+date: "May 1, 2019"
+output: html_document
+---
+
+```{r, echo=FALSE, message=FALSE, error=FALSE, warning=FALSE}
+rm(list=ls())
+#table(is.na(long450.randomInterceptOnly$Intercept))
+source("Y:/LaurenV_random/Norris/programs/qqPlot_LV.R")
+library(ggplot2)
+library(lattice)
+library(bacon)
+library(ggpubr)
+library(ggplotify)
+library(nlme)
+```
+
+
+### P-value Distribution: QQ Plots & Histograms ###
+
+**450K**
+
+```{r, echo=FALSE, message=FALSE, error=FALSE, warning=FALSE, eval=FALSE}
+load("Y:/LaurenV_random/Norris/data/T1Dpaper/sesameModeling_v2/interaction/long450.sesame.interaction.Rdata")
+source("Y:/LaurenV_random/Norris/programs/getInflationFactorLambda.R")
+
+finalProbeWant = read.csv(file="Y:/LaurenV_random/Norris/data/T1Dpaper/sesameProcessing/filtering/finalProbesPassed.450K.csv")
+want = long450.sesame.interaction[which(rownames(long450.sesame.interaction) %in% as.matrix(finalProbeWant)),]
+
+set.seed(2020)
+bacon.adj.450sesame.withCombat = bacon(teststatistics=want[!is.na(want$clinage.groupT1D_control_t_pvalue), "clinage.groupT1D_control_t_stat"], niter=50000L,  nburnin = 10000L)
+#inflation(bacon.adj.450sesame.withCombat)
+lambda.bacon  = getLambda(pval(bacon.adj.450sesame.withCombat))
+inflation(bacon.adj.450sesame.withCombat)
+
+##raw 
+lambda.raw = getLambda(as.numeric(want[!is.na(want$clinage.groupT1D_control_t_pvalue), "clinage.groupT1D_control_t_pvalue"]))
+raw.hist = qplot(want[!is.na(want$clinage.groupT1D_control_t_pvalue), "clinage.groupT1D_control_t_pvalue"], geom="histogram", bins=50) + ggtitle("450K Group*Age Interaction p-values\nSeSAMe, ComBat Adjusted, Filtered") + labs(x="p-value", y="Frequency")
+raw.qq = as.ggplot(qqunif.plot(as.numeric(want[!is.na(want$clinage.groupT1D_control_t_pvalue), "clinage.groupT1D_control_t_pvalue"]), draw.conf=FALSE, main="450K Group*Age Interaction p-values (lambda = 1.62)\nSeSAMe, ComBat Adjusted, Filtered"))
+
+raw.hist
+raw.qq
+
+#bacon
+bacon.hist = qplot(pval(bacon.adj.450sesame.withCombat), geom="histogram", bins=50) + ggtitle("450K Group*Age Interaction p-values\nSeSAMe, ComBat Adjusted, Filtered & BACON") + labs(x="p-value", y="Frequency")
+bacon.qq = as.ggplot(qqunif.plot(as.numeric(pval(bacon.adj.450sesame.withCombat)), draw.conf=FALSE, main="450K Group*Age Interaction p-values  (lambda = 1.07)\nSeSAMe, ComBat Adjusted, Filtered & BACON"))
+
+bacon.hist
+bacon.qq
+
+sesame450.forMeta = data.frame(tStat.450=want[!is.na(want$clinage.groupT1D_control_t_pvalue), "clinage.groupT1D_control_t_stat"], pval.450 = pval(bacon.adj.450sesame.withCombat), M.interaction = want[!is.na(want$clinage.groupT1D_control_t_pvalue), "clinage.groupT1D_control"],M.groupControl = want[!is.na(want$clinage.groupT1D_control_t_pvalue), "groupT1D_control"], M.age = want[!is.na(want$clinage.groupT1D_control_t_pvalue), "clinage"], M.intercept = want[!is.na(want$clinage.groupT1D_control_t_pvalue), "Intercept"], M.sexMale = want[!is.na(want$clinage.groupT1D_control_t_pvalue), "genderMale"])
+rownames(sesame450.forMeta) = rownames(want[!is.na(want$clinage.groupT1D_control_t_pvalue),])
+
+save(bacon.adj.450sesame.withCombat, sesame450.forMeta, file="Y:/LaurenV_random/Norris/data/T1Dpaper/sesameModeling_v2/interaction/interaction.sesame450.filtered.bacon.forMeta.v2.Rdata")
+save(bacon.hist, bacon.qq, raw.hist, raw.qq, want,  file="Y:/LaurenV_random/Norris/data/T1Dpaper/sesameModeling_v2/interaction/interaction.sesame450.filtered.bacon.plots.Rdata")
+```
+```{r, echo=FALSE, message=FALSE, error=FALSE, warning=FALSE}
+rm(list=ls())
+load(file="Y:/LaurenV_random/Norris/data/T1Dpaper/sesameModeling_v2/interaction/interaction.sesame450.filtered.bacon.forMeta.Rdata")
+load(file="Y:/LaurenV_random/Norris/data/T1Dpaper/sesameModeling_v2/interaction/interaction.sesame450.filtered.bacon.plots.Rdata")
+
+raw.hist
+raw.qq
+bacon.hist
+bacon.qq
+```
+
+
+
+**EPIC**
+
+```{r, echo=FALSE, message=FALSE, error=FALSE, warning=FALSE, eval=FALSE}
+rm(list=ls())
+load("Y:/LaurenV_random/Norris/data/T1Dpaper/sesameModeling_v2/interaction/longEPIC.sesame.interaction.Rdata")
+source("Y:/LaurenV_random/Norris/programs/getInflationFactorLambda.R")
+source("Y:/LaurenV_random/Norris/programs/qqPlot_LV.R")
+
+finalProbeWant = read.csv(file="Y:/LaurenV_random/Norris/data/T1Dpaper/sesameProcessing/filtering/finalProbesPassed.EPIC.csv", header=FALSE)
+want = longEPIC.sesame.interaction[which(rownames(longEPIC.sesame.interaction) %in% as.matrix(finalProbeWant)),]
+
+set.seed(2020)
+bacon.adj.EPICsesame.withCombat = bacon(teststatistics=want[!is.na(want$clinage.groupT1D_control_t_pvalue), "clinage.groupT1D_control_t_stat"], niter=50000L,  nburnin = 10000L)
+#inflation(bacon.adj.EPICsesame.withCombat)
+lambda.bacon  = getLambda(pval(bacon.adj.EPICsesame.withCombat))
+inflation(bacon.adj.EPICsesame.withCombat)
+
+##raw 
+lambda.raw = getLambda(as.numeric(want[!is.na(want$clinage.groupT1D_control_t_pvalue), "clinage.groupT1D_control_t_pvalue"]))
+raw.hist = qplot(want[!is.na(want$clinage.groupT1D_control_t_pvalue), "clinage.groupT1D_control_t_pvalue"], geom="histogram", bins=50) + ggtitle("EPIC Group*Age Interaction p-values\nSeSAMe, ComBat Adjusted, Filtered") + labs(x="p-value", y="Frequency")
+raw.qq = as.ggplot(qqunif.plot(as.numeric(want[!is.na(want$clinage.groupT1D_control_t_pvalue), "clinage.groupT1D_control_t_pvalue"]), draw.conf=FALSE, main="EPIC Group*Age Interaction p-values (lambda = 2.39)\nSeSAMe, ComBat Adjusted, Filtered"))
+
+raw.hist
+raw.qq
+
+#bacon
+bacon.hist = qplot(pval(bacon.adj.EPICsesame.withCombat), geom="histogram", bins=50) + ggtitle("EPIC Group*Age Interaction p-values\nSeSAMe, ComBat Adjusted, Filtered & BACON") + labs(x="p-value", y="Frequency")
+bacon.qq = as.ggplot(qqunif.plot(as.numeric(pval(bacon.adj.EPICsesame.withCombat)), draw.conf=FALSE, main="EPIC Group*Age Interaction p-values  (lambda = 2.31)\nSeSAMe, ComBat Adjusted, Filtered & BACON"))
+
+bacon.hist
+bacon.qq
+
+sesameEPIC.forMeta = data.frame(tStat.EPIC=want[!is.na(want$clinage.groupT1D_control_t_pvalue), "clinage.groupT1D_control_t_stat"], pval.EPIC = pval(bacon.adj.EPICsesame.withCombat), M.interaction = want[!is.na(want$clinage.groupT1D_control_t_pvalue), "clinage.groupT1D_control"],M.groupControl = want[!is.na(want$clinage.groupT1D_control_t_pvalue), "groupT1D_control"], M.age = want[!is.na(want$clinage.groupT1D_control_t_pvalue), "clinage"], M.intercept = want[!is.na(want$clinage.groupT1D_control_t_pvalue), "Intercept"], M.sexMale = want[!is.na(want$clinage.groupT1D_control_t_pvalue), "genderMale"])
+rownames(sesameEPIC.forMeta) = rownames(want[!is.na(want$clinage.groupT1D_control_t_pvalue),])
+
+
+
+save(bacon.adj.EPICsesame.withCombat, sesameEPIC.forMeta, file="Y:/LaurenV_random/Norris/data/T1Dpaper/sesameModeling_v2/interaction/interaction.sesameEPIC.filtered.bacon.forMeta.v2.Rdata")
+save(bacon.hist, bacon.qq, raw.hist, raw.qq, want,  file="Y:/LaurenV_random/Norris/data/T1Dpaper/sesameModeling_v2/interaction/interaction.sesameEPIC.filtered.bacon.plots.Rdata")
+```
+
+```{r, echo=FALSE, message=FALSE, error=FALSE, warning=FALSE}
+rm(list=ls())
+load(file="Y:/LaurenV_random/Norris/data/T1Dpaper/sesameModeling_v2/interaction/interaction.sesameEPIC.filtered.bacon.forMeta.Rdata")
+load(file="Y:/LaurenV_random/Norris/data/T1Dpaper/sesameModeling_v2/interaction/interaction.sesameEPIC.filtered.bacon.plots.Rdata")
+
+raw.hist
+raw.qq
+bacon.hist
+bacon.qq
+```
+
+### Meta Candidates ###
+
+```{r, echo=FALSE, message=FALSE, error=FALSE, warning=FALSE, eval=FALSE}
+rm(list=ls())
+load("Y:/LaurenV_random/Norris/data/T1Dpaper/sesameModeling_v2/interaction/interaction.sesame450.filtered.bacon.forMeta.v2.Rdata")
+load("Y:/LaurenV_random/Norris/data/T1Dpaper/sesameModeling_v2/interaction/interaction.sesameEPIC.filtered.bacon.forMeta.v2.Rdata")
+source("Y:/LaurenV_random/Norris/programs/metaFunctions.fromKaterina.R")
+
+colnames(sesame450.forMeta)[-c(1:2)] = paste(colnames(sesame450.forMeta)[-c(1:2)], ".450K", sep="")
+colnames(sesameEPIC.forMeta)[-c(1:2)] = paste(colnames(sesameEPIC.forMeta)[-c(1:2)], ".EPIC", sep="")
+
+
+forMeta = as.data.frame(merge(sesame450.forMeta, sesameEPIC.forMeta, by=0))
+
+forMeta$pval.Zscore.meta = apply(forMeta, 1, function(a) Ncomb.2p.2sided(as.numeric(a[3]), as.numeric(a[10]), as.numeric(a[2]), as.numeric(a[9])))
+forMeta$FDR.Zscore.meta = p.adjust(forMeta$pval.Zscore.meta, method="BH")
+
+table(forMeta$FDR.Zscore.meta<0.05)
+table(forMeta$FDR.Zscore.meta<0.3)
+table(forMeta$pval.Zscore.meta<0.0001)
+table(forMeta$pval.Zscore.meta<0.001)
+
+source("Y:/LaurenV_random/Norris/programs/getInflationFactorLambda.R")
+source("Y:/LaurenV_random/Norris/programs/qqPlot_LV.R")
+getLambda(forMeta$pval.Zscore.meta)
+as.ggplot(qqunif.plot(forMeta$pval.Zscore.meta, draw.conf=FALSE, main="EPIC Group*Age Interaction META p-values  (lambda = 1.16)\nSeSAMe, ComBat Adjusted, Filtered & BACON"))
+
+forMeta$M.interaction.Meta = apply(forMeta[,which(colnames(forMeta) %in% c("M.interaction.EPIC", "M.interaction.450K"))], 1, mean)
+forMeta$M.age.Meta = apply(forMeta[,which(colnames(forMeta) %in% c("M.age.EPIC", "M.age.450K"))], 1, mean)
+forMeta$M.group.Meta = apply(forMeta[,which(colnames(forMeta) %in% c("M.groupControl.EPIC", "M.groupControl.450K"))], 1, mean)
+forMeta$M.intercept.Meta = apply(forMeta[,which(colnames(forMeta) %in% c("M.intercept.EPIC", "M.intercept.450K"))], 1, mean)
+forMeta$M.sex.Meta = apply(forMeta[,which(colnames(forMeta) %in% c("M.sexMale.EPIC", "M.sexMale.450K"))], 1, mean)
+
+
+head(forMeta)
+#calculate a meta-group*age estimate at the 25%, 50% (median), 75% quantile and the mean
+
+if(FALSE){
+ages = c(1.3, 4, 5.2, 8.2)
+results = forMeta[1:5,]
+age = ages[1]
+getGroupAgeEstimate = function(results, age){
+  M.case.age = results$M.intercept.Meta + results$M.age.effectSize.Meta*age
+  M.control.age = results$M.intercept.Meta + results$M.age.effectSize.Meta*age + results$M.group.effectSize.Meta + results$M.interaction.effectSize.Meta*age 
+  Beta.case.age = getBeta(M.case.age)
+  Beta.control.age = getBeta(M.control.age)
+  want = data.frame(M.control.age, M.case.age, Beta.control.age, Beta.case.age)
+  return(want)
+  }
+
+
+age.1.3 = list()
+age.4 = list()
+age.5.2 = list()
+age.8.2 = list()
+
+for(i in 1:nrow(forMeta)){
+ age.1.3[[i]] = getGroupAgeEstimate(forMeta[i,], ages[1]) 
+ age.4[[i]] = getGroupAgeEstimate(forMeta[i,], ages[2]) 
+ age.5.2[[i]] = getGroupAgeEstimate(forMeta[i,], ages[3]) 
+ age.8.2[[i]] = getGroupAgeEstimate(forMeta[i,], ages[4]) 
+}
+
+age.1.3 <- do.call("rbind", age.1.3)
+age.4 <- do.call("rbind", age.4)
+age.5.2 <- do.call("rbind", age.5.2)
+age.8.2 <- do.call("rbind", age.8.2)
+
+rownames(age.1.3) = forMeta$Row.names
+rownames(age.4) = forMeta$Row.names
+rownames(age.5.2) = forMeta$Row.names
+rownames(age.8.2) = forMeta$Row.names
+
+colnames(age.1.3) = paste(colnames(age.1.3), ".1.3", sep="")
+colnames(age.4) = paste(colnames(age.4),".4", sep="")
+colnames(age.5.2) = paste(colnames(age.5.2), ".5.2", sep="")
+colnames(age.8.2) = paste(colnames(age.8.2), ".8.2", sep="")
+
+
+forMeta.wAgeEst = data.frame(forMeta, age.1.3, age.4, age.5.2, age.8.2)
+}
+
+
+
+save(forMeta, file="Y:/LaurenV_random/Norris/data/T1Dpaper/sesameModeling_v2/interaction/interaction.meta.results.v2.Rdata")
+save(forMeta.wAgeEst, file="Y:/LaurenV_random/Norris/data/T1Dpaper/sesameModeling_v2/interaction/interaction.meta.results.wAgeEst.Rdata")
+load(file="Y:/LaurenV_random/Norris/data/T1Dpaper/sesameModeling_v2/interaction/interaction.meta.results.wAgeEst.Rdata")
+
+```
+
+```{r, echo=FALSE, message=FALSE, error=FALSE, warning=FALSE, eval=FALSE}
+rm(list=ls())
+#get annotation with results
+load(file="Y:/LaurenV_random/Norris/data/T1Dpaper/sesameModeling_v2/interaction/interaction.meta.results.Rdata")
+load("Y:/LaurenV_random/Norris/data/annotation.withClosestGene.450K.Rdata")
+metaResults.wAnno  = merge(anno.new, forMeta, by.y="Row.names", by.x=0)
+
+save(metaResults.wAnno, file="Y:/LaurenV_random/Norris/data/T1Dpaper/sesameModeling_v2/interaction/interaction.meta.results.wAnno.Rdata")
+
+forDMR = metaResults.wAnno[,c(2,3,3,5,57, 59, 60)]
+forDMR$pos.1 = forDMR$pos.1+1
+
+forDMR = forDMR[order(forDMR$chr, forDMR$pos),]
+write.table(forDMR, file="Y:/LaurenV_random/Norris/data/T1Dpaper/sesameModeling_v2/interaction/interaction.results.forDMR.bed", sep="\t", col.names=FALSE, row.names=FALSE, quote=FALSE)
+```
+
+```{r, echo=FALSE, message=FALSE, error=FALSE, warning=FALSE, eval=FALSE}
+load(file="Y:/LaurenV_random/Norris/data/T1Dpaper/sesameModeling_v2/interaction/interaction.meta.results.wAnno.Rdata")
+metaResults.wAnno = metaResults.wAnno[order(metaResults.wAnno$pval.Zscore.meta),]
+want = metaResults.wAnno[which(metaResults.wAnno$FDR.Zscore.meta<0.3),]
+toPrint = want[,c(1:3, 25:27, 39:41, 43, 44, 46:47, 49:52)]
+
+write.csv(toPrint, file="Y:/LaurenV_random/Norris/data/T1Dpaper/sesameModeling_v2/interaction/interactionTopResults.csv")
+
+want = toPrint$Row.names
+rm(list=ls())
+load(file="Y:/LaurenV_random/Norris/data/T1Dpaper/sesameModeling_v2/interaction/EPIC.interactionCands.Rdata")
+toCombine.EPIC = merge(t(M.want), pheno.t1d.final, by.x=0, by.y="rgName")
+toCombine.EPIC = data.frame(toCombine.EPIC[,c(1:5, 23, 58)], platform="EPIC")
+colnames(toCombine.EPIC)[6:7] = c("group", "age")
+
+load(file="Y:/LaurenV_random/Norris/data/T1Dpaper/sesameModeling_v2/interaction/450K.interactionCands.Rdata")
+toCombine.450 = merge(t(M.want), pheno.t1d.final, by.x=0, by.y="Array")
+toCombine.450 = data.frame(toCombine.450[,c(1:5, 25, 43)], platform="450K")
+colnames(toCombine.450)[6:7] = c("group", "age")
+
+M.pheno.want = rbind(toCombine.450, toCombine.EPIC)
+M.pheno.want$group = gsub("Cases", "case", M.pheno.want$group)
+getwd()
+write.csv(M.pheno.want, file="test.csv")
+
+library(RColorBrewer)
+set1.colors = brewer.pal("Set1", n=9)
+dark2.colors = brewer.pal("Dark2", n=8)
+colors = c(set1.colors[2],dark2.colors[2])
+
+load(file="Y:/LaurenV_random/Norris/data/T1Dpaper/sesameModeling_v2/interaction/interaction.meta.results.wAgeEst.Rdata")
+
+mod = lm(M.pheno.want$cg01030213 ~ M.pheno.want$group*M.pheno.want$age + M.pheno.want$platform)
+
+mod = forMeta[which(forMeta$Row.names=="cg01030213"),]
+
+
+topProbe.all = ggplot(M.pheno.want, aes(x=age, y=cg01030213, shape=platform, col=group)) + 
+  geom_point() + 
+  theme_bw(base_size=16) +
+  #geom_point(shape=1) +  
+  #scale_shape_manual(labels = rep(c("450K","EPIC") ,2), values=rep(c(1,3),2), name="Platform")+
+  scale_shape_manual(labels = rep(c("450K","EPIC") ,2), values=rep(c(1,19),2), name="Platform")+
+  
+  scale_color_manual(labels = rep(c("Case","Control"),2), values=rep(colors,2), name="Group")+
+#  scale_color_manual(labels = c("Case","Control"), values=c("red", "blue"), name="Group")+
+  
+  # scale_shape_manual(values=c(16,21))+
+  #  scale_color_manual(values=colorsWant[1:4])+
+  #geom_smooth(method=lm,   # Add linear regression lines
+  #           se=FALSE,    # Don't add shaded confidence region
+  #          fullrange=TRUE) +
+  xlab("Age (years)") +
+  ylab("M-value") +
+  ggtitle("cg01030213: M-value Over Time") +   
+#  stat_smooth(method = "lm", se = FALSE, fullrange = TRUE)
+#  geom_smooth(method=lm, se=FALSE, fullrange=TRUE)
+# get regression lines from lm model called mod;
+  geom_abline(aes(intercept=mod$M.intercept.450K +mod$M.group.effectSize.450K,slope=mod$M.age.effectSize.450K + mod$M.interaction.effectSize.450K, linetype = "450K", col=colors[2]))+ #450K control
+  geom_abline(aes(intercept=mod$M.intercept.450K ,slope=mod$M.age.effectSize.450K, linetype = "450K", col=colors[1]))+ #450K case
+  geom_abline(aes(intercept=mod$M.intercept.EPIC +mod$M.group.effectSize.EPIC,slope=mod$M.age.effectSize.EPIC + mod$M.interaction.effectSize.EPIC, linetype = "EPIC", col=colors[2]))+ #EPIC control
+  geom_abline(aes(intercept=mod$M.intercept.EPIC, slope=mod$M.age.effectSize.EPIC, linetype = "EPIC", col=colors[1]))+ #EPIC case
+  scale_linetype_manual(values = rep(c("450K" = "solid", "EPIC" = "dashed"), 2)) +
+  guides(color=guide_legend("Group"), linetype=guide_legend("Platform Regression"), shapetype=guide_legend("Platform")) 
+
+  
+topProbe.all
+
+
+ages = quantile(M.pheno.want$age, probs = c(0.25, 0.5, 0.75))
+
+getBeta = function(a){
+  b = 2^a/(1 + 2^a)  
+  return(b)
+}
+
+cg01030213.M.differentAges = data.frame(M.control.450 = apply(as.matrix(ages),1, function(a) mod$M.intercept.450K +mod$M.group.effectSize.450K + mod$M.age.effectSize.450K*a + mod$M.interaction.effectSize.450K*a), 
+    M.case.450 =apply(as.matrix(ages),1, function(a) mod$M.intercept.450K + mod$M.age.effectSize.450K*a),
+    M.control.EPIC = apply(as.matrix(ages),1, function(a) mod$M.intercept.EPIC +mod$M.group.effectSize.EPIC + mod$M.age.effectSize.EPIC*a + mod$M.interaction.effectSize.EPIC*a),
+    M.case.EPIC = apply(as.matrix(ages),1, function(a) mod$M.intercept.EPIC + mod$M.age.effectSize.EPIC*a))
+                                        
+cg01030213.Beta.differentAges = data.frame(getBeta(as.matrix(cg01030213.M.differentAges)))
+
+cg01030213.diffBeta.differentAges = data.frame(delta450K = cg01030213.Beta.differentAges$M.case.450 - cg01030213.Beta.differentAges$M.control.450, deltaEPIC = cg01030213.Beta.differentAges$M.case.EPIC - cg01030213.Beta.differentAges$M.control.EPIC)                                 
+rownames(cg01030213.diffBeta.differentAges) = rownames(cg01030213.Beta.differentAges)   
+cg01030213.diffBeta.differentAges$age = ages
+
+m1 = data.frame(cg01030213.diffBeta.differentAges[,c(1,3)], "450K")
+colnames(m1) = c("deltaBeta", "age", "platform")
+m2 = data.frame(cg01030213.diffBeta.differentAges[,c(2,3)], "EPIC")
+colnames(m2) = c("deltaBeta", "age", "platform")
+toPlot = rbind(m1, m2)
+
+####
+ggplot(data=toPlot, aes(x=age, y=deltaBeta, fill=platform)) +
+geom_bar(stat="identity", color="black", position=position_dodge())+
+  theme_bw(base_size=16) +
+  scale_fill_manual(values=c('#999999','#E69F00'))+
+  ylab("Delta Beta\n Case - Control")+
+  xlab("Age (years)")+
+  ggtitle("cg01030213")+
+  geom_text(data = annotations, aes(x=xpos,y=ypos,hjust=hjustvar,
+                                          vjust=vjustvar,label=annotateText))
+```
+
+**Plot the Beta Value**
+
+```{r, echo=FALSE, message=FALSE, error=FALSE, warning=FALSE, eval=FALSE}
+
+
+library(RColorBrewer)
+set1.colors = brewer.pal("Set1", n=9)
+dark2.colors = brewer.pal("Dark2", n=8)
+colors = c(set1.colors[2],dark2.colors[2])
+getBeta = function(a){
+  b = 2^a/(1 + 2^a)  
+  return(b)
+}
+M.pheno.want$cg21262649.beta = getBeta(M.pheno.want$cg21262649)
+
+age.est.want = data.frame(beta=t(forMeta.wAgeEst[which(forMeta.wAgeEst$Row.names=="cg21262649"), c("Beta.control.age.1.3", "Beta.case.age.1.3", "Beta.control.age.4", "Beta.case.age.4", "Beta.control.age.5.2", "Beta.case.age.5.2", "Beta.control.age.8.2", "Beta.case.age.8.2")]), age = c(1.3, 1.3, 4,4,5.2,5.2,8.2,8.2), group=rep(c("control", "case"), 4))
+load(file="Y:/LaurenV_random/Norris/data/T1Dpaper/sesameModeling_v2/interaction/DMR.info.Rdata")
+
+library(ggExtra)
+
+meta.lm = as.matrix(lm(M.pheno.want$cg21262649.beta ~ M.pheno.want$age*M.pheno.want$group + as.factor(M.pheno.want$platform))$coefficients)
+
+##Add points of Ages;
+topProbe.all = ggplot(M.pheno.want, aes(x=age, y=cg21262649.beta, shape=platform, col=group)) + 
+  geom_point() + 
+  theme_bw(base_size=16) +
+  
+  scale_shape_manual(labels = rep(c("450K","EPIC") ,2), values=rep(c(1,19),2), name="Platform")+
+  
+  scale_color_manual(labels = rep(c("Case","Control"),2), values=rep(colors,2), name="Group")+
+
+  xlab("Age (years)") +
+  ylab("Beta (% methylation)") +
+  ggtitle("cg21262649: Beta (% Methylation) Over Time") +
+
+# get regression lines from lm model called mod;
+  geom_abline(aes(intercept=meta.lm[1,1] + meta.lm[3,1] + meta.lm[4,1]/2 ,slope=meta.lm[2,1] + meta.lm[5,1], col=colors[2]))+ #control
+  geom_abline(aes(intercept=meta.lm[1,1] + meta.lm[4,1]/2 ,slope=meta.lm[2,1], col=colors[1]))+ # case
+  guides(color=guide_legend("Group"), linetype=guide_legend("Meta Regression")) 
+
+
+
+  
+topProbe.all
+
+
+### 4 regression lines;
+
+topProbe.all = ggplot(M.pheno.want, aes(x=age, y=cg21262649.beta, shape=platform, col=group)) + 
+  geom_point() + 
+  theme_bw(base_size=16) +
+  scale_shape_manual(labels = rep(c("450K","EPIC") ,2), values=rep(c(1,19),2), name="Platform")+
+  scale_color_manual(labels = rep(c("Case","Control"),2), values=rep(colors,2), name="Group")+
+  xlab("Age (years)") +
+  ylab("Beta (% methylation)") +
+  ggtitle("cg21262649: Beta (% Methylation) Over Time") +
+
+
+
+  geom_abline(aes(intercept=meta.lm[1,1] + meta.lm[3,1],slope=meta.lm[2,1] + meta.lm[5,1], col=colors[2], linetype="450K"))+ #450K control
+  geom_abline(aes(intercept=meta.lm[1,1] ,slope=meta.lm[2,1], col=colors[1], linetype="450K"))+ # 450K case
+  geom_abline(aes(intercept=meta.lm[1,1] + meta.lm[3,1] + meta.lm[4,1],slope=meta.lm[2,1] + meta.lm[5,1], col=colors[2], linetype="EPIC"))+ #EPIC control
+  geom_abline(aes(intercept=meta.lm[1,1] + meta.lm[4,1],slope=meta.lm[2,1], col=colors[1], linetype="EPIC"))+ # EPIC case
+  scale_linetype_manual(values = rep(c("450K" = "solid", "EPIC" = "dashed"), 2)) +
+  guides(color=guide_legend("Group"), linetype=guide_legend("Platform Regression"), shapetype=guide_legend("Platform"))
+
+
+topProbe.all
+```
+
+
+**DMR: Bar Chart of the Beta Values**
+
+Try for DMR1: chr1	68512650 to 68513064
+
+
+```{r, echo=FALSE, message=FALSE, error=FALSE, warning=FALSE, eval=FALSE}
+library(tidyr)
+load("Y:/LaurenV_random/Norris/data/annotation.withClosestGene.450K.Rdata")
+
+DMR1.probes = anno.new[which(anno.new$chr=="chr1"),]
+DMR1.probes = DMR1.probes[which(DMR1.probes$pos>=68512650 & DMR1.probes$pos <= 68513064),]
+
+DMR1 = forMeta.wAgeEst[which(forMeta.wAgeEst$Row.names %in% DMR1.probes$Name),]
+
+DMR1.forBarChart = DMR1[,c("Beta.control.age.1.3", "Beta.case.age.1.3", "Beta.control.age.4", "Beta.case.age.4", "Beta.control.age.5.2", "Beta.case.age.5.2", "Beta.control.age.8.2", "Beta.case.age.8.2")]
+
+DMR1.forBarChart.2 =  gather(DMR1.forBarChart)
+DMR1.forBarChart.2$probe = rep(rownames(DMR1.forBarChart), 8)
+DMR1.forBarChart.2$age = as.numeric(sapply(strsplit(as.character(DMR1.forBarChart.2$key), split="age.", fixed=TRUE), "[[", 2))
+DMR1.forBarChart.2$group = gsub("Beta.", "", sapply(strsplit(as.character(DMR1.forBarChart.2$key), split=".age", fixed=TRUE), "[[", 1))
+
+ggplot(data=DMR1.forBarChart.2, aes(x=group*probe, y=value, fill=as.character(age))) + 
+    geom_bar(stat="identity", position=position_dodge())
+
+
+ggplot(data=df2, aes(x=dose, y=len, fill=supp)) +
+geom_bar(stat="identity", position=position_dodge())
+
+a = DMR1.forBarChart.2
+probe = "cg00448707"
+getBetaSlopes = function(a, probe){
+  tmp = a[which(a$probe==probe), ]
+  lm.tmp = lm(tmp$value ~ tmp$group*tmp$age)$coefficients
+  control.slope = lm.tmp["tmp$age"] + lm.tmp["tmp$groupcontrol:tmp$age"]
+  case.slope = lm.tmp["tmp$age"]
+
+  want = data.frame(control.betaSlope = control.slope, case.betaSlope = case.slope)
+  return(want)  
+}
+
+DMR1.probeID = as.matrix(DMR1.probes$Name)
+DMR1.betaSlopes = do.call("rbind", apply(DMR1.probeID, 1, function(a) getBetaSlopes(DMR1.forBarChart.2, a)))
+rownames(DMR1.betaSlopes) = DMR1.probeID[,1]
+
+DMR1.betaSlopes.toPlot = gather(DMR1.betaSlopes)
+DMR1.betaSlopes.toPlot$group = gsub(".betaSlope", "", DMR1.betaSlopes.toPlot$key, fixed=TRUE)
+DMR1.betaSlopes.toPlot$probe = rep(rownames(DMR1.betaSlopes), 2)
+
+ggplot(data=DMR1.betaSlopes.toPlot, aes(x=probe, y=value, fill=group)) + 
+    geom_bar(stat="identity", color="black", position=position_dodge())+
+    theme_bw(base_size=12) +
+  ggtitle("Interaction DMR1: GNG12-AS1;DIRAS3")+
+  ylab("Change in Beta per Year") + 
+  scale_fill_manual(values=c(colors[2], colors[1]))
+  
+
+
+```
+

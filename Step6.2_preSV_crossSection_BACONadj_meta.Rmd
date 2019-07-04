@@ -1,0 +1,123 @@
+---
+title: "sesame Results preSV"
+author: "Lauren Vanderlinden"
+date: "April 24, 2019"
+output: html_document
+---
+
+```{r, echo=FALSE, message=FALSE, error=FALSE, warning=FALSE}
+rm(list=ls())
+#table(is.na(long450.randomInterceptOnly$X.Intercept.))
+source("Y:/LaurenV_random/Norris/programs/qqPlot_LV.R")
+library(ggplot2)
+library(lattice)
+library(bacon)
+library(ggpubr)
+library(ggplotify)
+```
+
+
+### P-value Distribution: QQ Plots & Histogram ###
+
+**450K**
+
+```{r, echo=FALSE, message=FALSE, error=FALSE, warning=FALSE}
+load("Y:/LaurenV_random/Norris/data/T1Dpaper/sesameModeling_v2/crossSections/preSV.450K.Rdata")
+load("Y:/LaurenV_random/Norris/data/T1Dpaper/sesameProcessing/filtering/sesame450.meanVarRange.Rdata")
+load("Y:/LaurenV_random/Norris/data/annotation.450k.Rdata")
+source("Y:/LaurenV_random/Norris/programs/getInflationFactorLambda.R")
+
+finalProbeWant = read.csv(file="Y:/LaurenV_random/Norris/data/T1Dpaper/sesameProcessing/filtering/finalProbesPassed.450K.csv")
+
+want = preSV.450.results[which(rownames(preSV.450.results) %in% as.matrix(finalProbeWant)),]
+
+set.seed(2020)
+bacon.adj.450sesame.withCombat = bacon(teststatistics=want[!is.na(want$groupT1D.control_tStatistic), "groupT1D.control_tStatistic"], niter=50000L,  nburnin = 10000L)
+#inflation(bacon.adj.450sesame.withCombat)
+lambda.bacon  = getLambda(pval(bacon.adj.450sesame.withCombat))
+
+
+##raw 
+lambda.raw = getLambda(as.numeric(want[!is.na(want$groupT1D.control_pvalue), "groupT1D.control_pvalue"]))
+raw.hist = qplot(want[!is.na(want$groupT1D.control_pvalue), "groupT1D.control_pvalue"], geom="histogram", bins=50) + ggtitle("450K preSV Group p-values\nSeSAMe, ComBat Adjusted, Filtered") + labs(x="p-value", y="Frequency")
+raw.qq = as.ggplot(qqunif.plot(as.numeric(want[!is.na(want$groupT1D.control_pvalue), "groupT1D.control_pvalue"]), draw.conf=FALSE, main="450K preSV Group p-values (lambda = 0.82)\nSeSAMe, ComBat Adjusted, Filtered"))
+
+raw.hist
+raw.qq
+
+#bacon
+bacon.hist = qplot(pval(bacon.adj.450sesame.withCombat), geom="histogram", bins=50) + ggtitle("450K preSV Group p-values\nSeSAMe, ComBat Adjusted, Filtered & BACON") + labs(x="p-value", y="Frequency")
+bacon.qq = as.ggplot(qqunif.plot(as.numeric(pval(bacon.adj.450sesame.withCombat)), draw.conf=FALSE, main="450K preSV Group p-values  (lambda = 1.00)\nSeSAMe, ComBat Adjusted, Filtered & BACON"))
+
+bacon.hist
+bacon.qq
+
+sesame450.forMeta = data.frame(tStat.450=want[!is.na(want$groupT1D.control_tStatistic), "groupT1D.control_tStatistic"], pval.450 = pval(bacon.adj.450sesame.withCombat), Beta.control.450 = want[!is.na(want$groupT1D.control_tStatistic), "Bcontrol"], Beta.case.450 = want[!is.na(want$groupT1D.control_tStatistic), "Bcase"], Beta.diff.450 = want[!is.na(want$groupT1D.control_tStatistic), "dfBeta"])
+rownames(sesame450.forMeta) = rownames(want[!is.na(want$groupT1D.control_tStatistic), ])
+save(bacon.adj.450sesame.withCombat, sesame450.forMeta, file="Y:/LaurenV_random/Norris/data/T1Dpaper/sesameModeling_v2/crossSections/preSV.sesame450.filtered.bacon.forMeta.Rdata")
+```
+
+**EPIC**
+
+```{r, echo=FALSE, message=FALSE, error=FALSE, warning=FALSE}
+rm(list=ls())
+source("Y:/LaurenV_random/Norris/programs/qqPlot_LV.R")
+source("Y:/LaurenV_random/Norris/programs/getInflationFactorLambda.R")
+load("Y:/LaurenV_random/Norris/data/T1Dpaper/sesameModeling_v2/crossSections/preSV.EPIC.Rdata")
+load("Y:/LaurenV_random/Norris/data/T1Dpaper/sesameProcessing/filtering/sesameEPIC.meanVarRange.Rdata")
+#load("Y:/LaurenV_random/Norris/data/annotation.850k.Rdata")
+
+finalProbeWant = read.csv(file="Y:/LaurenV_random/Norris/data/T1Dpaper/sesameProcessing/filtering/finalProbesPassed.EPIC.csv", header=FALSE)
+
+want = preSV.850.results[which(rownames(preSV.850.results) %in% as.matrix(finalProbeWant)),]
+
+set.seed(2020)
+bacon.adj.EPICsesame.withCombat = bacon(teststatistics=want[!is.na(want$groupT1D.control_tStatistic), "groupT1D.control_tStatistic"], niter=50000L,  nburnin = 10000L)
+#inflation(bacon.adj.EPICsesame.withCombat)
+lambda.bacon  = getLambda(pval(bacon.adj.EPICsesame.withCombat))
+
+##raw 
+lambda.raw = getLambda(as.numeric(want[!is.na(want$groupT1D.control_pvalue), "groupT1D.control_pvalue"]))
+raw.hist = qplot(want[!is.na(want$groupT1D.control_pvalue), "groupT1D.control_pvalue"], geom="histogram", bins=50) + ggtitle("EPIC preSV Group p-values\nSeSAMe, ComBat Adjusted, Filtered") + labs(x="p-value", y="Frequency")
+raw.qq = as.ggplot(qqunif.plot(as.numeric(want[!is.na(want$groupT1D.control_pvalue), "groupT1D.control_pvalue"]), draw.conf=FALSE, main="EPIC preSV Group p-values (lambda = 0.95)\nSeSAMe, ComBat Adjusted, Filtered"))
+
+raw.hist
+raw.qq
+
+#bacon
+bacon.hist = qplot(pval(bacon.adj.EPICsesame.withCombat), geom="histogram", bins=50) + ggtitle("EPIC preSV Group p-values\nSeSAMe, ComBat Adjusted, Filtered & BACON") + labs(x="p-value", y="Frequency")
+bacon.qq = as.ggplot(qqunif.plot(as.numeric(pval(bacon.adj.EPICsesame.withCombat)), draw.conf=FALSE, main="EPIC preSV Group p-values  (lambda = 1.05)\nSeSAMe, ComBat Adjusted, Filtered & BACON"))
+
+bacon.hist
+bacon.qq
+
+sesameEPIC.forMeta = data.frame(tStat.EPIC=want[!is.na(want$groupT1D.control_tStatistic), "groupT1D.control_tStatistic"], pval.EPIC = pval(bacon.adj.EPICsesame.withCombat), Beta.control.EPIC = want[!is.na(want$groupT1D.control_tStatistic), "Bcontrol"], Beta.case.EPIC = want[!is.na(want$groupT1D.control_tStatistic), "Bcase"], Beta.diff.EPIC = want[!is.na(want$groupT1D.control_tStatistic), "dfBeta"])
+rownames(sesameEPIC.forMeta) = rownames(want[!is.na(want$groupT1D.control_tStatistic), ])
+
+save(bacon.adj.EPICsesame.withCombat, sesameEPIC.forMeta, file="Y:/LaurenV_random/Norris/data/T1Dpaper/sesameModeling_v2/crossSections/preSV.sesameEPIC.filtered.bacon.forMeta.Rdata")
+```
+
+
+### Meta Candidates ###
+
+```{r, echo=FALSE, message=FALSE, error=FALSE, warning=FALSE, eval=FALSE}
+rm(list=ls())
+load("Y:/LaurenV_random/Norris/data/T1Dpaper/sesameModeling_v2/crossSections/preSV.sesameEPIC.filtered.bacon.forMeta.Rdata")
+load("Y:/LaurenV_random/Norris/data/T1Dpaper/sesameModeling_v2/crossSections/preSV.sesame450.filtered.bacon.forMeta.Rdata")
+source("Y:/LaurenV_random/Norris/programs/metaFunctions.fromKaterina.R")
+
+forMeta = as.data.frame(merge(sesame450.forMeta, sesameEPIC.forMeta, by=0))
+forMeta$pval.Zscore.meta = apply(forMeta, 1, function(a) Ncomb.2p.2sided(as.numeric(a[3]), as.numeric(a[8]), as.numeric(a[2]), as.numeric(a[7])))
+
+forMeta$FDR.Zscore.meta = p.adjust(forMeta$pval.Zscore.meta, method="BH")
+
+table(forMeta$FDR.Zscore.meta<0.05)
+table(forMeta$FDR.Zscore.meta<0.1)
+table(forMeta$pval.Zscore.meta<0.0001)
+table(forMeta$pval.Zscore.meta<0.001)
+
+save(forMeta, file="Y:/LaurenV_random/Norris/data/T1Dpaper/sesameModeling_v2/crossSections/preSVmeta.results.Rdata")
+```
+
+
+
